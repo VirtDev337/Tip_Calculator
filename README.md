@@ -1,1 +1,2 @@
 # App_Project-Tip_Calculator
+### A simple tip calculator that returns the bill total with tip and tax, as well as a per person amount.  There are two options available you may not find in other applications.  These two options allow you to itemize the tip and rate the service.  The rating option provides the ability to increase or decrease the tip amount by 2%. 
