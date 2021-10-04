@@ -1,8 +1,8 @@
-# TODO  Take input of the total amount
-# TODO  input of number of people tipping
-# TODO  input of percentage for tip
-# TODO  calculate tip from total
-# TODO  Change the percentage of tip per person
+# Take input of the total amount
+# input of number of people tipping
+# input of percentage for tip
+# calculate tip from total
+# Change the percentage of tip per person
 # Define the list variable for the values provided at the prompt and the list to hold the results
 values = []
 processed = []
@@ -22,14 +22,16 @@ def get_values(msg):
     provd = []
     # Backend formatting due to the variuous inputs necessary to run the program
     if necessary[1] in msg or optional[1] in msg:
-        while provided == 0:
+        while provided <= 0:
             # Asks for input and then converts to integer else prints error and re-asks until proper input provided
             try: 
                 provided = int(input(msg))
+                if provided < 0: print("Positive numbers are required.\n")
             except:
-                print("Non numeric values not permitted")
+                print("Please enter a numeric value.")
     elif optional[0] in msg:
         # Asks for list of input and splits into a list
+        # TODO Unsuccessful in adding filter for symbols. Omitted
         provd = input(msg).split(' ') 
         for prov in provd:
             # Converts input into integers and adds to provd list
@@ -37,17 +39,18 @@ def get_values(msg):
             # Removes string version from provd list
             provd.remove(prov)
     else:
-        while provided == 0.0:
+        while provided <= 0.0:
             try:
                 # Asks for input and converts to a float
                 provided  = float(input(msg))
+                if provided < 0: print("Positive numbers are required.\n")
             except:
                 # Runs if anything input is not converted to a float.
-                print("Non numeric values not permitted")
+                print("Please enter a positive numeric value.")
             # If tip percentage option
             if necessary[2] in msg:
                     # Converts whole number to decimal
-                    provided *= .01
+                    if provided >= 1: provided *= .01
     if provided > 0:
         # Return provided if it has a value
         return provided
@@ -69,14 +72,16 @@ def msg_end(option):
         return "quality of service (1-2 Poor, 3 Acceptable, 4 Good, 5 Great, 6+ Amazing): "
 
 def optional_itms():
+    so = 0
+    ro = 0
     # Queries whether to request info for the optional input
     answr = input("\nWould you like to have the tip split: ")
     # If the above query contains y
     if "y" in answr or "Y" in answr:
+        # Define the split_option variable for option evaluation in calulate function
+        so= 1
         # Ask for the input for the option of obligation and store in values list
         values.append(get_values(message + msg_end(optional[0])))
-        # Define the split_option variable for option evaluation in calulate function
-        split_option = 1
     # Clear the answr variable for the next query and ask to rate the quality of service provided
     answr = ""
     answr = input("\nWould you like to rate the service: ")
@@ -84,7 +89,8 @@ def optional_itms():
         # Ask for the input for the option of srvc rate and add to the values list
         values.append(get_values(message + msg_end(optional[1])))
         # Define the rate_option variable for option evaluation in calculate function
-        rate_option = 1
+        ro = 1
+    return so, ro
 
 def rating_adjustment(tp, sr):
     # Condidtional to adjust the tip in the range of -.02 to .02 depending on service rating
@@ -109,12 +115,14 @@ def calculate(lst):
     tip = lst[2]
     per = []
     srv = 0
-    
+    indx = -1
     # Evaluate and adjust tip obligation
     if rate_option:
         # Optional service rating processed before total bill for adjustment
         # Assigns the iput for the rating evaluation to srv
-        srv = lst[4]
+        srv = lst[indx]
+        # Modify indx to -2 if the rate option is utilized, changing the index in which split option may reside
+        indx -= 1
         # As long as the srv has value
         if srv >= 0:
             # Evaluate the rating and return the modified tip to tip
@@ -122,26 +130,27 @@ def calculate(lst):
     # Add the total amount, with tax and tip, to the first index of total list
     total.append(((cost * tip) + tx))
     
-    if split_option:
+    if split_option:        
         # If lst index 3 has value or that the type of the value in it is a list
-        if lst[3] or isinstance(lst[3], list):
-            # Assign list index 3 value to per
-            per = lst[3]
+        if lst[indx] or isinstance(lst[indx], list):
+            # Assign list index 3 value to per, reversed due to a reversal of input
+            per = lst[indx]
             # Iterate over the list in per
             for p in per:
                 # If p isn't a float, multiply by .01 to convert it and provide proper decimal placement
                 if not isinstance(p, float):
-                    p *= .01
+                    p = float(p)
+                if p >= 1: p *= .01
                 # Get the portion of the tip specified in this location of the list
                 p *= tip
                 # Add the amount of that portion of the tip to the new list
-                individual_amt.append((cost * p))
+                individual_amt.append(cost * p)
             # Iterate over the new list and add that to the per person amount added to the total list
             for amt in individual_amt:
-                total.append((tx / party) + amt or 0)
+                total.append(round((tx / party) + amt or 0, 2))
     else:
         # Should a split tip not be requested, offer each persons portion
-        total.append(total[0] / party)
+        total.append(round(total[0] / party, 2))
     return total
 
 def display(procd):
@@ -158,6 +167,6 @@ def display(procd):
 print(welcome)
 for nec in necessary:
     values.append(get_values(message + msg_end(nec)))
-optional_itms()
+split_option, rate_option = optional_itms()
 processed = calculate(values)
 display(processed)
