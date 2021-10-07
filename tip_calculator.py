@@ -16,12 +16,35 @@ welcome = "\nWelcome to the Tip Calculator.\n------------------------------\nPle
 message = "\nPlease provide the "
 tax = 0.10
 
+def intify(lst):
+    for itm in lst:
+        # Converts input into integers and adds to lst list
+        lst.append(int(itm))
+        # Removes string version from lst list
+        lst.remove(itm)
+    return lst
+
+def verify(lst):
+    tmp = ''
+    symbols = [',', '$', '%']
+    for itm in lst:
+        for symbol in symbols:
+            if symbol in itm:
+                for i in itm:
+                    if symbol != i:
+                        tmp = ''.join(tmp + i)
+                    else:
+                        break
+                lst.append(tmp)
+                lst.remove(itm)
+    return lst
+
 def get_values(msg):
     # Function to get and convert input
     provided = 0.0
     provd = []
     # Backend formatting due to the variuous inputs necessary to run the program
-    if necessary[1] in msg or optional[1] in msg:
+    if necessary[1] in msg or optional[1] in msg:   #if party or service rate option
         while provided <= 0:
             # Asks for input and then converts to integer else prints error and re-asks until proper input provided
             try: 
@@ -29,15 +52,25 @@ def get_values(msg):
                 if provided < 0: print("Positive numbers are required.\n")
             except:
                 print("Please enter a numeric value.")
-    elif optional[0] in msg:
+    elif optional[0] in msg:  # If tip split option
         # Asks for list of input and splits into a list
-        # TODO Unsuccessful in adding filter for symbols. Omitted
-        provd = input(msg).split(' ') 
-        for prov in provd:
-            # Converts input into integers and adds to provd list
-            provd.append(int(prov))
-            # Removes string version from provd list
-            provd.remove(prov)
+        provd = input(msg).split(' ')
+        # Remove symbols $, %, , from the input
+        provd = verify(provd)   # NOTE: Unsuccessful in adding filter for symbols
+        # Convery each string into an integer
+        provd = intify(provd)
+    elif necessary[2] in msg:   # If tip
+        provided = -1
+        while provided < 0.0:
+            try:
+                # Asks for input and converts to a float
+                provided  = float(input(msg))
+                if provided < 0: print("Positive numbers are required.\n")
+            except:
+                # Runs if anything input is not converted to a float.
+                print("Please enter a positive numeric value.")
+        # Converts whole number to decimal
+        if provided >= 1: provided *= .01
     else:
         while provided <= 0.0:
             try:
@@ -47,10 +80,6 @@ def get_values(msg):
             except:
                 # Runs if anything input is not converted to a float.
                 print("Please enter a positive numeric value.")
-            # If tip percentage option
-            if necessary[2] in msg:
-                    # Converts whole number to decimal
-                    if provided >= 1: provided *= .01
     if provided > 0:
         # Return provided if it has a value
         return provided
@@ -104,6 +133,22 @@ def rating_adjustment(tp, sr):
         tp -= .02
     return tp
 
+def split_tip(lst, ind_amt, tip, cost):
+    cnt = 0
+    # Iterate over the list in lst
+    for l in lst:
+        cnt += 1
+        # If p isn't a float, convert from previous type
+        if not isinstance(l, float):
+            l = float(l)
+        # Multiply by .01 to provide proper decimal placement
+        if l >= 1: l *= .01
+        # Get the portion of the tip specified in this location of the list
+        l *= tip
+        # Add the amount of that portion of the tip to the new list
+        ind_amt.append(cost * l)
+    return cnt
+
 def calculate(lst):
     # Funcion to evaluate options and calculate accordingly
     # Define the variables necessary for this function
@@ -128,29 +173,25 @@ def calculate(lst):
             # Evaluate the rating and return the modified tip to tip
             tip = rating_adjustment(tip, srv)
     # Add the total amount, with tax and tip, to the first index of total list
-    total.append(((cost * tip) + tx))
-    
-    if split_option:        
+    if tip:
+        total.append((cost * tip) + tx)
+    else:
+        total.append(tx)
+    if split_option:
+        count = 0       
         # If lst index 3 has value or that the type of the value in it is a list
         if lst[indx] or isinstance(lst[indx], list):
             # Assign list index 3 value to per, reversed due to a reversal of input
-            per = lst[indx]
-            # Iterate over the list in per
-            for p in per:
-                # If p isn't a float, multiply by .01 to convert it and provide proper decimal placement
-                if not isinstance(p, float):
-                    p = float(p)
-                if p >= 1: p *= .01
-                # Get the portion of the tip specified in this location of the list
-                p *= tip
-                # Add the amount of that portion of the tip to the new list
-                individual_amt.append(cost * p)
+            count = split_tip(lst[indx], individual_amt, tip, cost)
             # Iterate over the new list and add that to the per person amount added to the total list
+            ind_total = tx / party
             for amt in individual_amt:
-                total.append(round((tx / party) + amt or 0, 2))
+                total.append(ind_total + amt or 0)
+            if count != party:
+                total.append(ind_total)
     else:
         # Should a split tip not be requested, offer each persons portion
-        total.append(round(total[0] / party, 2))
+        total.append(total[0] / party)
     return total
 
 def display(procd):
@@ -160,7 +201,7 @@ def display(procd):
             print("\nThe total of your bill with tax and tip is: ")
         elif cnt == 1:
             print("\nThe bill per person is: ")
-        print(itm)
+        print('%.2f', itm)
         cnt += 1
     print("------------------------------------------------------------------\n")
 
