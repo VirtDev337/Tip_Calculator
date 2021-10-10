@@ -17,4 +17,4 @@ When prompted enter a percentage per person seperated by commas.
 ## Rate the Quality of Service
 
 Accessible by typing '*rate*' or '*both*' when prompted, will allow you to rate the service provided to you.
-The rating you provide will adjust the tip, 5&#00B1%.
+The rating you provide will adjust the tip, &pm;5%.
