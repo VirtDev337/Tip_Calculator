@@ -7,133 +7,200 @@
 values = []
 processed = []
 split_option, rate_option = 0, 0
-# Define the list variable 'necessary' to provide expandability and ensure functionality
-necessary = ["bill", "party", "tip"]
-# Defines an optional part of the challenge, to divide the tip according to input and a service rating to adjust the tip
-optional = ["obligation", "srvc rate"]
 # Defines the welcome message, beginning of the message for input requests and tax
-welcome = "\nWelcome to the Tip Calculator.\n------------------------------\nPlease refrain from entering anything but numbers and dollars.\n"
-message = "\nPlease provide the "
-tax = 0.10
+welcome = "\nWelcome to the Tip Calculator.\n------------------------------\nPlease refrain from entering anything but numbers and dollars.\nYou can end at any time by typing quit or q."
+message = "\nPlease provide the"
 
-def intify(lst):
+necessary = {
+    'bill' : f"{message} total amount of the bill: $ ",
+    'party' : f"{message} size of your party: # ",
+    'tip' : f"{message} percentage for the tip: % "
+}
+optional = {
+            'obligation' : f"\n{message} percentage of each persons obligation (comma delimited, not to exceed 100%): % ",
+            'service' : f"\n{message} quality of service (1-2 Poor, 3 Acceptable, 4 Good, 5 Great, 6+ Amazing): # ",
+            'additional' : "\nWould you like to provide information for the options of obligation and service rating? y/n ",
+            'which' : '\nWhich option would you like to define (split, rate or both): ',
+            'again' : '\nWould you like to run the tip calculator again? y/n ',
+        }
+error_msgs = {
+    'positive' : 'Positive numbers are required.\n',
+    'numeric' : 'Please enter a numeric value.',
+    'zero' : 'It is mathmatically impossible to split zero'
+}
+
+def intify(lst):   # Converts input into integers
+    tmp = []
     for itm in lst:
-        # Converts input into integers and adds to lst list
-        lst.append(int(itm))
-        # Removes string version from lst list
-        lst.remove(itm)
+        try:
+            tmp.append(abs(int(itm)))
+        except:
+            # Runs if input is not converted to a integer.
+            print(error_msgs['numeric'])
+            tmp.append('error')
+            return tmp
+    # Return the converted list
+    return tmp
+
+def dictify(lst):   # Converts the list into a dictionary
+    i = 0
+    tmp = {}
+    # Iterate over the list assigning both the key and the value
+    while i < len(lst):
+        tmp[f'item{i}'] = lst[i]
+        i += 1
+    return tmp
+
+def listify(dct):   # Converts the dictionary into a list
+    lst = []
+    i = 0
+    # Iterate over the dictionary appending the values to the list
+    while i < len(dct):
+        lst.append(dct[f'item{i}'])
+        i += 1
     return lst
 
-def verify(lst):
-    tmp = ''
-    symbols = [',', '$', '%']
-    for itm in lst:
-        for symbol in symbols:
-            if symbol in itm:
-                for i in itm:
-                    if symbol != i:
-                        tmp = ''.join(tmp + i)
-                    else:
-                        break
-                lst.append(tmp)
-                lst.remove(itm)
-    return lst
+def verify(lst):   # Checks the values in the list for symbols and removing them
+    # Ternary anonymous function that evaluates for a symbol and returns the symbol
+    tern = lambda itm : ','if ',' in itm else '$' if '$' in itm else '%' if '%' in itm else 'q' if 'quit' in itm or 'q' in itm else ''
+    symb = ''
+    # Convert the list into a dictionary
+    dct = dictify(lst)
+    # Iterate over the dictionary
+    for i in dct:
+        tmp = ''
+        # Assign symb with the symbol in use
+        symb = tern(dct[i])
+        if 'q' in symb: exit(0)
+        # If symb variable has anything other than an empty string
+        if symb != '':
+            # Assign tmp with the value without the symbol
+            tmp = dct[i].replace(symb, '')
+        else:
+            # The value had no symbol, assign it to tmp
+            tmp = dct[i]
+        # Assign the value of tmp to dictionary in i key
+        dct[i] = tmp
+        # Return the list converted from the symbolless dictionary
+    return listify(dct)
 
-def get_values(msg):
-    # Function to get and convert input
-    provided = 0.0
-    provd = []
-    # Backend formatting due to the variuous inputs necessary to run the program
-    if necessary[1] in msg or optional[1] in msg:   #if party or service rate option
-        while provided <= 0:
-            # Asks for input and then converts to integer else prints error and re-asks until proper input provided
-            try: 
-                provided = int(input(msg))
-                if provided < 0: print("Positive numbers are required.\n")
-            except:
-                print("Please enter a numeric value.")
-    elif optional[0] in msg:  # If tip split option
+def get_int_input(key):   # Function to query user for the integer input
+    value = 0
+    if 'both' == key: key = 'service'
+    msg = necessary[key] if 'party' == key else optional[key]
+    while value <= 0:
+        value = input(msg).lower()
+        if 'q' in value: exit(0)
+        try: 
+            value = int(value)
+            if value < 0: 
+                print(error_msgs['positive'])
+        except:
+            # Runs if input is not converted to a integer.
+            print(error_msgs['numeric'])
+    return value
+
+def get_float_input(key):   # Function to query user for the float input
+    value = -1
+    compare = value < 0 if 'tip' == key else value <= 0
+    while compare:
+        value  = input(necessary[key]).lower()
+        if 'q' in value: exit(0)
+        try:
+            value = float(value)
+            if value < 0: print(error_msgs['positive'])
+        except:
+            # Runs if input is not converted to a float.
+            print(error_msgs['numeric'])
+        compare = value < 0 if 'tip' == key else value <= 0
+    return value
+
+def get_list_input(key, lst):   #Function to query user for list of values
+    error = 1
+    while error:
+        if 'both' == key:
+            key = 'obligation'
         # Asks for list of input and splits into a list
-        provd = input(msg).split(' ')
-        # Remove symbols $, %, , from the input
-        provd = verify(provd)   # NOTE: Unsuccessful in adding filter for symbols
-        # Convery each string into an integer
-        provd = intify(provd)
-    elif necessary[2] in msg:   # If tip
-        provided = -1
-        while provided < 0.0:
-            try:
-                # Asks for input and converts to a float
-                provided  = float(input(msg))
-                if provided < 0: print("Positive numbers are required.\n")
-            except:
-                # Runs if anything input is not converted to a float.
-                print("Please enter a positive numeric value.")
-        # Converts whole number to decimal
-        if provided >= 1: provided *= .01
-    else:
-        while provided <= 0.0:
-            try:
-                # Asks for input and converts to a float
-                provided  = float(input(msg))
-                if provided < 0: print("Positive numbers are required.\n")
-            except:
-                # Runs if anything input is not converted to a float.
-                print("Please enter a positive numeric value.")
-    if provided > 0:
-        # Return provided if it has a value
-        return provided
-    else:
-        # Return the list provd if provided has no value
-        return provd
+        lst.append(input(optional[key]).lower().split(' '))
+        # Remove symbols $, %, , from the input and convert each string into an integer
+        lst[-1] = intify(verify(lst[-1]))            
+        if lst[-1] == 'error':
+            error = 1
+            lst.remove('error')
+        else:
+            error = 0
 
-def msg_end(option): 
-    # Set the end part of the message for input according to the option at the time
-    if "bill" == option:
-        return "total amount of the bill: "
-    elif "party" == option:
-        return "size of your party: "
-    elif "tip" == option:
-        return "percentage for the tip: "
-    elif "obligation" == option:
-        return "percentage of each persons obligation (space delimited, not to exceed 100%): "
-    elif "srvc rate" == option:
-        return "quality of service (1-2 Poor, 3 Acceptable, 4 Good, 5 Great, 6+ Amazing): "
+def get_necessary_values(require):   # Function to get and convert required input
+    provided = 0.0
+    # Backend formatting due to the variuous inputs necessary to run the program
+    if 'party' == require:   # If party
+        # Asks for input until proper input provided
+        provided = get_int_input(require)
+    else:   # If tip or bill
+        # Asks for input until proper input provided
+        provided = get_float_input(require)
+    if 'tip' == require:
+        if provided >= 1: provided *= 0.01
+    return provided
 
-def optional_itms():
+def get_optional_values(opt, provd = []):   # Function to get and convert optional input
+    both = False
+    if opt == 'both':
+        both = True
+    # Backend formatting due to the variuous optional inputs necessary to run the program if chosen
+    if both:
+        get_list_input(opt, provd)
+        return get_int_input(opt)
+    if 'obligation' in opt:  # If tip split option
+        if provd[2] > 0:
+            get_list_input(opt, provd)
+        else:
+            print(error_msgs['zero'])
+
+    if 'service' in opt:   # If service
+        # Asks for input until proper input provided
+        return get_int_input(opt)
+
+def optional_itms(answr = ""):  # Function to determine if additional features are requested
     so = 0
     ro = 0
-    # Queries whether to request info for the optional input
-    answr = input("\nWould you like to have the tip split: ")
-    # If the above query contains y
-    if "y" in answr or "Y" in answr:
+    # Obtain what optional features to use
+    answr = input(optional['which']).lower()
+    if 'q' in answr: exit()
+    # Set the both variable according to the answer so the answr variable can be used to pass the required syntax
+    if answr == 'both':
+        so = ro = 1
+        # Ask for the input for the option of obligation and service
+        values.append(get_optional_values(answr, values))
+    if 'split' in answr: 
+        answr = 'obligation'
         # Define the split_option variable for option evaluation in calulate function
-        so= 1
+        so = 1
         # Ask for the input for the option of obligation and store in values list
-        values.append(get_values(message + msg_end(optional[0])))
-    # Clear the answr variable for the next query and ask to rate the quality of service provided
-    answr = ""
-    answr = input("\nWould you like to rate the service: ")
-    if "y" in answr or "Y" in answr:
-        # Ask for the input for the option of srvc rate and add to the values list
-        values.append(get_values(message + msg_end(optional[1])))
+        get_optional_values(answr, values)
+    if 'rate' in answr:
+        answr = 'service'
         # Define the rate_option variable for option evaluation in calculate function
         ro = 1
+        # Ask for the input for the option of service rating and store in values list
+        values.append(get_optional_values(answr))
     return so, ro
 
-def rating_adjustment(tp, sr):
-    # Condidtional to adjust the tip in the range of -.02 to .02 depending on service rating
+def rating_adjustment(tp, sr):   # Adjusts the tip according to the rate option
+    # Condidtional to adjust the tip in the range of -.05 to .05 depending on service rating
     if sr >= 6:
-        tp += .02
+        tp += .05
     elif sr == 5:
+        tp += .03
+    elif 5 > sr > 2:
         tp += .01
     elif sr == 2:
-        tp -= .01
+        tp -= .03
     elif sr <= 1:
-        tp -= .02
+        tp -= .05
     return tp
 
-def split_tip(lst, ind_amt, tip, cost):
+def split_tip(lst, ind_amt, tip, cost):   # Calculates the percetage of the tip according to the percentages provided
     cnt = 0
     # Iterate over the list in lst
     for l in lst:
@@ -149,16 +216,15 @@ def split_tip(lst, ind_amt, tip, cost):
         ind_amt.append(cost * l)
     return cnt
 
-def calculate(lst):
-    # Funcion to evaluate options and calculate accordingly
+def calculate(lst):   # Funcion to evaluate options and calculate accordingly
     # Define the variables necessary for this function
     total = []
     individual_amt = []
     cost = lst[0]
+    tax = 0.10
     tx = cost * tax + cost
     party = lst[1]
     tip = lst[2]
-    per = []
     srv = 0
     indx = -1
     # Evaluate and adjust tip obligation
@@ -173,12 +239,15 @@ def calculate(lst):
             # Evaluate the rating and return the modified tip to tip
             tip = rating_adjustment(tip, srv)
     # Add the total amount, with tax and tip, to the first index of total list
-    if tip:
-        total.append((cost * tip) + tx)
+    if tip > 0:
+        total.append(cost * tip)
+        total.append(cost * tip + tx)
     else:
+        total.append(0)
         total.append(tx)
     if split_option:
-        count = 0       
+        count = 0
+        tmp = tx
         # If lst index 3 has value or that the type of the value in it is a list
         if lst[indx] or isinstance(lst[indx], list):
             # Assign list index 3 value to per, reversed due to a reversal of input
@@ -187,27 +256,55 @@ def calculate(lst):
             ind_total = tx / party
             for amt in individual_amt:
                 total.append(ind_total + amt or 0)
+                tmp -= (ind_total + amt)
             if count != party:
-                total.append(ind_total)
+                total.append(tmp / (party - count))
     else:
         # Should a split tip not be requested, offer each persons portion
-        total.append(total[0] / party)
+        if party > 1: total.append(total[1] / party)
     return total
 
-def display(procd):
+def display(procd):   # The formatting of the output for the results
     cnt = 0
     for itm in procd:
         if not cnt:
-            print("\nThe total of your bill with tax and tip is: ")
+            print("\nThe tip is: ")
         elif cnt == 1:
-            print("\nThe bill per person is: ")
-        print('%.2f', itm)
+            print("\nThe total of your bill, including tax and tip, is: ")
+        elif cnt == 2:
+            if values[1] > 1: print("\nThe bill per person is: ")
+        print('${:,.2f}'.format(itm))
         cnt += 1
     print("------------------------------------------------------------------\n")
 
-print(welcome)
-for nec in necessary:
-    values.append(get_values(message + msg_end(nec)))
-split_option, rate_option = optional_itms()
-processed = calculate(values)
-display(processed)
+# The main loop that continues until the option not to continue is entered
+again = 1
+while again:   # Loop to run the tip_calculator app again until chosen to exit.
+    # Prints the welcome message
+    print(welcome)
+    # Runs through the necessary dictionary returning the values needed for the calculation
+    for required in necessary:
+        values.append(get_necessary_values(required))
+    # print(values)   # For testing value placement
+    # Queries whether to request info for the optional input if an answer is not provided, bypassed if called on a rerun
+    answr = ''
+    answr = input(optional['additional']).lower()
+    if 'q' in answr: exit(0)
+    # If the above query contains y
+    if "y" in answr:
+        # Accesses the optional dictionary and returns the options chosen while storing the values in the optional dictionary
+        split_option, rate_option = optional_itms()
+    # Returns the calculated values of tip, bill and each individuals obligation of the bill
+    processed = calculate(values)
+    display(processed)
+    # Requests the user to decide if they wish to run it again
+    answer = input(f"\n{optional['again']}").lower()
+    if 'q' in answer or 'n' in answer:
+        again = 0
+        exit(0)
+    else:
+        values = []
+        answr = ''
+        split_option, rate_option = int(), int()
+        processd = []
+        answer = ''
