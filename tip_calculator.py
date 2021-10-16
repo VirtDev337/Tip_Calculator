@@ -9,7 +9,7 @@ values = []
 processed = []
 split_option, rate_option = 0, 0
 # Defines the welcome message, beginning of the message for input requests and tax
-welcome = "\nWelcome to the Tip Calculator.\n------------------------------\nPlease refrain from entering anything but numbers and dollars.\nYou can end at any time by typing quit or q."
+welcome = "\n\t\t\t\tWelcome to the Tip Calculator\n\t\t\t\t------------------------------\n\t\tPlease refrain from entering anything but numbers and dollars.\n\t\t\tYou can end at any time by typing quit or q."
 message = "\nPlease provide the"
 
 necessary = {
