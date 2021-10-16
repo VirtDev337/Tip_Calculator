@@ -1,4 +1,3 @@
- <div style="background-image: url('terminal-calculator.png');"> 
 <h1><div align="center"> App_Project-Tip_Calculator </div></h1>
 
 <div align="center">JTC course project to incorporate syntax and functionality that we learned up to this point.</div>
